@@ -16,7 +16,7 @@
     #createWeekButton {
       margin-bottom: 20px;
       padding: 10px 15px;
-      background-color: #bb4504;
+      background-color: #d26e37;
       color: white;
       border: none;
       border-radius: 6px;
@@ -240,36 +240,48 @@
 
     // Affiche la liste des semaines
     function showWeeks() {
-      weeksList.style.display = "block";
-      daysList.style.display = "none";
-      mealsView.style.display = "none";
-      showHomeButton(false);
+  pageTitle.textContent = "Mes Semaines";
+  formContainer.style.display = "none";
+  weekListContainer.style.display = "block";
+  weekListContainer.innerHTML = ""; // vide l'ancien contenu
 
-      weeksList.innerHTML = "<h2>Semaines disponibles :</h2>";
+  // Ajout du bouton de création
+  const createButton = document.createElement("button");
+  createButton.textContent = "Créer une nouvelle semaine";
+  createButton.id = "createWeekButton";
+  weekListContainer.appendChild(createButton);
 
-      db.collection("semaines").orderBy("createdAt", "desc").get()
-        .then(snapshot => {
-          if (snapshot.empty) {
-            weeksList.innerHTML += "<p>Aucune semaine trouvée. Créez-en une nouvelle !</p>";
-            return;
-          }
+  createButton.addEventListener("click", createNewWeek);
 
-          snapshot.forEach(doc => {
-            const week = doc.data();
-            const btn = document.createElement("button");
-            btn.textContent = `Semaine du ${week.createdAt.toDate().toLocaleDateString()}`;
-            btn.style.margin = "5px";
-            btn.addEventListener("click", () => {
-              currentWeekId = doc.id;
-              showDaysForWeek(doc.id);
-            });
-            weeksList.appendChild(btn);
+  // Récupération des semaines depuis Firebase
+  db.collection("semaine").orderBy("createdAt", "desc").get()
+    .then((querySnapshot) => {
+      if (querySnapshot.empty) {
+        const message = document.createElement("p");
+        message.textContent = "Aucune semaine enregistrée.";
+        weekListContainer.appendChild(message);
+      } else {
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const weekDiv = document.createElement("div");
+          weekDiv.textContent = data.name || "Semaine sans nom";
+          weekDiv.classList.add("week-entry");
+
+          weekDiv.addEventListener("click", () => {
+            currentWeekId = doc.id;
+            loadWeekData(doc.id);
           });
-        })
-        .catch(err => {
-          console.error("Erreur récupération semaines :", err);
+
+          weekListContainer.appendChild(weekDiv);
         });
-    }
+      }
+    })
+    .catch((error) => {
+      console.error("Erreur lors du chargement des semaines :", error);
+    });
+}
+
+
 
     // Affiche les jours d'une semaine donnée
     function showDaysForWeek(weekId) {
@@ -323,11 +335,12 @@
 
     // Bouton accueil pour revenir à la liste des semaines
     homeButton.addEventListener("click", () => {
-      saveAllData();
-      currentWeekId = null;
-      currentDayDoc = null;
-      showWeeks();
-    });
+  saveAllData().then(() => {
+    location.reload();
+  });
+});
+
+
 
     // Crée une nouvelle semaine avec 7 jours
     createWeekButton.addEventListener("click", async () => {
