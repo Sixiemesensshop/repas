@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Suivi des Repas - Firestore</title>
+  <style>
+    body {
+  padding: 10px;
+}
+
+h1 {
+  font-size: 1.5em;
+}
+
+/* Boutons */
+button {
+  width: 100%;
+  max-width: 320px;
+  font-size: 1.1em;
+  padding: 12px 0;
+  box-sizing: border-box;
+}
+
+/* Liste des semaines */
+#weeksList button {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+}
+
+/* Jours - flex colonne sur mobile */
+#daysList {
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Carrés jours */
+.daySquare {
+  padding: 15px;
+  font-size: 1.1em;
+  flex: none;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* Vue repas : colonne unique */
+#mealsView {
+  flex-direction: column;
+  gap: 15px;
+  padding: 0;
+}
+
+/* Colonnes repas prennent 100% sur mobile */
+.mealColumn {
+  min-width: auto;
+  flex: none;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* Photos repas */
+.photoContainer {
+  height: 160px;
+}
+
+/* Textareas */
+textarea {
+  font-size: 1em;
+  height: 80px;
+  padding: 6px;
+}
+
+/* Retour bouton pleine largeur */
+#backButton {
+  width: 100%;
+  max-width: 320px;
+  padding: 10px 0;
+  font-size: 1.1em;
+}
+
+/* Media queries pour plus grand écran */
+@media(min-width: 700px) {
+  #daysList {
+    flex-direction: row;
+  }
+  #mealsView {
+    flex-direction: row;
+  }
+  #backButton, #createWeekButton, #weeksList button {
+    width: auto;
+    max-width: none;
+  }
+  .daySquare {
+    width: auto;
+    flex: 1 0 100px;
+  }
+  .mealColumn {
+    width: auto;
+    flex: 1 1 300px;
+  }
+  textarea {
+    height: 100px;
+  }
+  .photoContainer {
+    height: 180px;
+  }
+}
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #createWeekButton {
+      margin-bottom: 20px;
+      padding: 10px 15px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    #createWeekButton:hover {
+      background-color: #1e7e34;
+    }
+    #weeksList {
+      margin-bottom: 20px;
+    }
+    #daysList {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .daySquare {
+      cursor: pointer;
+      background: white;
+      border-radius: 8px;
+      padding: 20px 25px;
+      box-shadow: 0 0 5px #ccc;
+      user-select: none;
+      font-weight: bold;
+      font-size: 1.2em;
+      text-align: center;
+      flex: 1 0 100px;
+      transition: background-color 0.3s;
+    }
+    .daySquare:hover {
+      background-color: #d9f0ff;
+    }
+    #mealsView {
+      display: none;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .mealColumn {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 0 5px #ccc;
+      flex: 1 1 300px;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .mealColumn h3 {
+      margin-bottom: 10px;
+    }
+    .photoContainer {
+      width: 100%;
+      height: 180px;
+      background: #eee;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .photoContainer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      cursor: pointer;
+      display: block;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .uploadLabel {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      color: #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2em;
+      user-select: none;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      resize: none;
+      font-size: 1em;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-family: Arial, sans-serif;
+    }
+    #backButton {
+      margin-bottom: 20px;
+      padding: 8px 15px;
+      cursor: pointer;
+      background-color: #007bff;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    #backButton:hover {
+      background-color: #0056b3;
+    }
+    #weekTitle {
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    @media(max-width: 700px) {
+      #mealsView {
+        flex-direction: column;
+      }
+    }
+  </style>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <h1>Suivi des Repas</h1>
+  <button id="createWeekButton">Créer une nouvelle semaine</button>
+
+  <div id="weeksList"></div>
+
+  <div id="daysList"></div>
+
+  <div id="mealsView">
+    <div id="weekTitle"></div>
+    <button id="backButton">← Retour aux jours</button>
+    <div class="mealColumn" data-meal="dejeuner">
+      <h3>Déjeuner</h3>
+      <div class="photoContainer">
+        <label class="uploadLabel" for="file-dejeuner">📷 Ajouter une photo</label>
+        <input type="file" id="file-dejeuner" accept="image/*" />
+        <img id="img-dejeuner" style="display:none" />
+      </div>
+      <textarea id="textarea-dejeuner" placeholder="Ingrédients..."></textarea>
+    </div>
+
+    <div class="mealColumn" data-meal="midi">
+      <h3>Repas midi</h3>
+      <div class="photoContainer">
+        <label class="uploadLabel" for="file-midi">📷 Ajouter une photo</label>
+        <input type="file" id="file-midi" accept="image/*" />
+        <img id="img-midi" style="display:none" />
+      </div>
+      <textarea id="textarea-midi" placeholder="Ingrédients..."></textarea>
+    </div>
+
+    <div class="mealColumn" data-meal="soir">
+      <h3>Repas soir</h3>
+      <div class="photoContainer">
+        <label class="uploadLabel" for="file-soir">📷 Ajouter une photo</label>
+        <input type="file" id="file-soir" accept="image/*" />
+        <img id="img-soir" style="display:none" />
+      </div>
+      <textarea id="textarea-soir" placeholder="Ingrédients..."></textarea>
+    </div>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAisU5pfHdZSGpORSvxhaINI_aAB1sYVls",
+      authDomain: "suivis-repas-6c726.firebaseapp.com",
+      projectId: "suivis-repas-6c726",
+      storageBucket: "suivis-repas-6c726.appspot.com",
+      messagingSenderId: "828145526500",
+      appId: "1:828145526500:web:82fab9ea6b1f6ee2d56ef1"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+    const createWeekButton = document.getElementById("createWeekButton");
+    const weeksList = document.getElementById("weeksList");
+    const daysList = document.getElementById("daysList");
+    const mealsView = document.getElementById("mealsView");
+    const backButton = document.getElementById("backButton");
+    const weekTitle = document.getElementById("weekTitle");
+
+    let currentWeekId = null;
+    let currentDayDoc = null;
+
+    // Affiche la liste des semaines
+    function showWeeks() {
+      weeksList.innerHTML = "<h2>Semaines disponibles :</h2>";
+      daysList.style.display = "none";
+      mealsView.style.display = "none";
+
+      db.collection("semaines").orderBy("createdAt", "desc").get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            weeksList.innerHTML += "<p>Aucune semaine trouvée. Créez-en une nouvelle !</p>";
+            return;
+          }
+
+          snapshot.forEach(doc => {
+            const week = doc.data();
+            const btn = document.createElement("button");
+            btn.textContent = `Semaine du ${week.createdAt.toDate().toLocaleDateString()}`;
+            btn.style.margin = "5px";
+            btn.addEventListener("click", () => {
+              currentWeekId = doc.id;
+              showDaysForWeek(doc.id);
+            });
+            weeksList.appendChild(btn);
+          });
+        })
+        .catch(err => {
+          console.error("Erreur récupération semaines :", err);
+        });
+    }
+
+    // Affiche les jours d'une semaine donnée
+    function showDaysForWeek(weekId) {
+      weeksList.style.display = "none";
+      daysList.style.display = "flex";
+      mealsView.style.display = "none";
+      daysList.innerHTML = "";
+      weekTitle.textContent = `Semaine du ${new Date().toLocaleDateString()}`;
+
+      // Récupérer les jours dans la sous-collection "jours"
+      db.collection("semaines").doc(weekId).collection("jours").orderBy("order").get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            daysList.innerHTML = "<p>Aucun jour trouvé dans cette semaine.</p>";
+            return;
+          }
+
+          snapshot.forEach(doc => {
+            const day = doc.data();
+            const div = document.createElement("div");
+            div.className = "daySquare";
+            div.textContent = day.nom;
+            div.addEventListener("click", () => openDay(weekId, doc.id, day.nom));
+            daysList.appendChild(div);
+          });
+        })
+        .catch(err => {
+          console.error("Erreur récupération jours :", err);
+        });
+    }
+
+    // Ouvre la vue repas pour un jour donné
+    function openDay(weekId, dayDocId, dayName) {
+      currentDayDoc = dayDocId;
+      mealsView.style.display = "flex";
+      daysList.style.display = "none";
+      weeksList.style.display = "none";
+      weekTitle.textContent = `Semaine - Jour : ${dayName}`;
+
+      // Charge les données Firestore pour ce jour (repas)
+      loadDayData(weekId, dayDocId);
+    }
+
+    // Retour à la liste des jours
+    backButton.addEventListener("click", () => {
+      saveAllData();
+      showDaysForWeek(currentWeekId);
+    });
+
+    // Crée une nouvelle semaine avec 7 jours
+    createWeekButton.addEventListener("click", async () => {
+      createWeekButton.disabled = true;
+      createWeekButton.textContent = "Création en cours...";
+
+      try {
+        // Création d'une doc semaine avec date création
+        const semaineRef = await db.collection("semaines").add({
+          createdAt: new Date()
+        });
+
+        // Créer les jours dans la sous-collection "jours"
+        const batch = db.batch();
+        days.forEach((day, i) => {
+          const dayRef = semaineRef.collection("jours").doc();
+          batch.set(dayRef, {
+            nom: day,
+            order: i
+          });
+        });
+        await batch.commit();
+
+        alert("Nouvelle semaine créée !");
+        currentWeekId = semaineRef.id;
+        showDaysForWeek(currentWeekId);
+      } catch (err) {
+        console.error("Erreur création semaine :", err);
+        alert("Erreur lors de la création de la semaine.");
+      }
+
+      createWeekButton.disabled = false;
+      createWeekButton.textContent = "Créer une nouvelle semaine";
+    });
+
+    // Charge les données d'un jour (repas)
+    function loadDayData(weekId, dayDocId) {
+      ["dejeuner", "midi", "soir"].forEach(meal => {
+        const docId = `${meal}`; // sous-doc dans jour ? On va chercher dans repas à part
+        // On va chercher dans "repas" collection avec docId = semaineId-dayDocId-meal
+        const repasDocId = `${weekId}-${dayDocId}-${meal}`;
+
+        const img = document.getElementById("img-" + meal);
+        const label = document.querySelector(`.mealColumn[data-meal=${meal}] .uploadLabel`);
+        const textarea = document.getElementById("textarea-" + meal);
+
+        // Reset affichage
+        img.style.display = "none";
+        img.src = "";
+        if (label) label.style.display = "flex";
+        textarea.value = "";
+
+        db.collection("repas").doc(repasDocId).get()
+          .then(doc => {
+            if (doc.exists) {
+              const data = doc.data();
+
+              if (data.photoBase64) {
+                img.src = data.photoBase64;
+                img.style.display = "block";
+                if (label) label.style.display = "none";
+              }
+              textarea.value = data.ingredients || "";
+            }
+          }).catch(err => {
+            console.error("Erreur chargement repas :", err);
+          });
+      });
+    }
+
+    // Sauvegarde les données d'un repas
+    function saveMealData(weekId, dayDocId, meal) {
+      const img = document.getElementById("img-" + meal);
+      const textarea = document.getElementById("textarea-" + meal);
+      const photoBase64 = img.style.display !== "none" ? img.src : "";
+
+      const docId = `${weekId}-${dayDocId}-${meal}`;
+
+      return db.collection("repas").doc(docId).set({
+        ingredients: textarea.value,
+        photoBase64,
+        timestamp: new Date()
+      });
+    }
+
+    // Sauvegarde toutes les données du jour actuel
+    function saveAllData() {
+      if (!currentWeekId || !currentDayDoc) return;
+      ["dejeuner", "midi", "soir"].forEach(meal => {
+        saveMealData(currentWeekId, currentDayDoc, meal)
+          .catch(err => console.error("Erreur sauvegarde repas :", err));
+      });
+    }
+
+    // Gestion upload image + preview
+    ["dejeuner", "midi", "soir"].forEach(meal => {
+      const inputFile = document.getElementById("file-" + meal);
+      const img = document.getElementById("img-" + meal);
+      const label = document.querySelector(`.mealColumn[data-meal=${meal}] .uploadLabel`);
+
+      inputFile.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          img.src = event.target.result;
+          img.style.display = "block";
+          label.style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Clique sur l'image pour la supprimer
+      img.addEventListener("click", () => {
+        if (confirm("Supprimer la photo ?")) {
+          img.src = "";
+          img.style.display = "none";
+          label.style.display = "flex";
+          inputFile.value = "";
+        }
+      });
+    });
+
+    // Au démarrage on affiche la liste des semaines
+    showWeeks();
+  </script>
+</body>
+</html>
