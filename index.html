@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Suivi des Repas - Firestore</title>
   <style>
+    .daySquare input[type="text"] {
+  margin-top: 10px;
+  font-size: 0.9em;
+}
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
@@ -303,8 +307,39 @@
           snapshot.forEach(doc => {
             const day = doc.data();
             const div = document.createElement("div");
-            div.className = "daySquare";
-            div.textContent = day.nom;
+div.className = "daySquare";
+
+// Titre du jour
+const title = document.createElement("div");
+title.textContent = day.nom;
+title.style.fontWeight = "bold";
+title.style.marginBottom = "10px";
+
+// Champ de note
+const noteInput = document.createElement("input");
+noteInput.type = "text";
+noteInput.placeholder = "Ajouter une note...";
+noteInput.value = day.note || "";
+noteInput.style.width = "100%";
+noteInput.style.padding = "4px";
+noteInput.style.borderRadius = "5px";
+noteInput.style.border = "1px solid #ccc";
+noteInput.style.background = "#fff6ea";
+noteInput.addEventListener("click", (e) => {
+  e.stopPropagation(); // Empêche l’ouverture du jour
+});
+
+
+// Sauvegarde automatique de la note
+noteInput.addEventListener("change", () => {
+  db.collection("semaines").doc(weekId).collection("jours").doc(doc.id).update({
+    note: noteInput.value
+  });
+});
+
+div.appendChild(title);
+div.appendChild(noteInput);
+
             div.addEventListener("click", () => openDay(weekId, doc.id, day.nom));
             daysList.appendChild(div);
           });
@@ -356,14 +391,16 @@
         days.forEach((day, i) => {
           const dayRef = semaineRef.collection("jours").doc();
           batch.set(dayRef, {
-            nom: day,
-            order: i,
-            repas: {
-              dejeuner: { photoUrl: "", ingredients: "" },
-              midi: { photoUrl: "", ingredients: "" },
-              soir: { photoUrl: "", ingredients: "" }
-            }
-          });
+  nom: day,
+  order: i,
+  note: "", // Ajout du champ note
+  repas: {
+    dejeuner: { photoUrl: "", ingredients: "" },
+    midi: { photoUrl: "", ingredients: "" },
+    soir: { photoUrl: "", ingredients: "" }
+  }
+});
+
         });
         await batch.commit();
 
