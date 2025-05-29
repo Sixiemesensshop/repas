@@ -445,6 +445,109 @@
 
     // Au lancement, affiche la liste des semaines
     showWeeks();
+    function showWeeks() {
+  weeksList.innerHTML = "<h2>Semaines disponibles :</h2>";
+  daysList.style.display = "none";
+  mealsView.style.display = "none";
+
+  db.collection("semaines").orderBy("createdAt", "desc").get()
+    .then(snapshot => {
+      if (snapshot.empty) {
+        weeksList.innerHTML += "<p>Aucune semaine trouvée. Créez-en une nouvelle !</p>";
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const week = doc.data();
+        const div = document.createElement("div");
+        div.style.marginBottom = "10px";
+
+        // Affichage du nom semaine (date)
+        const dateSpan = document.createElement("span");
+        dateSpan.textContent = `Semaine du ${week.createdAt.toDate().toLocaleDateString()}`;
+        dateSpan.style.marginRight = "10px";
+
+        // Bouton pour sélectionner la semaine
+        const selectBtn = document.createElement("button");
+        selectBtn.textContent = "Voir jours";
+        selectBtn.style.marginRight = "5px";
+        selectBtn.addEventListener("click", () => {
+          currentWeekId = doc.id;
+          showDaysForWeek(doc.id);
+        });
+
+        // Bouton pour modifier le nom
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "✏️ Modifier";
+        editBtn.style.marginRight = "5px";
+
+        // Input caché pour la date modifiable
+        const inputDate = document.createElement("input");
+        inputDate.type = "date";
+        inputDate.style.display = "none";
+        inputDate.style.marginRight = "5px";
+
+        // Formater la date pour input type date (yyyy-mm-dd)
+        const d = week.createdAt.toDate();
+        inputDate.value = d.toISOString().slice(0,10);
+
+        // Bouton sauvegarder, caché au départ
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "💾 Sauvegarder";
+        saveBtn.style.display = "none";
+
+        // Événement modifier : afficher input et bouton sauvegarder, cacher texte et boutons
+        editBtn.addEventListener("click", () => {
+          dateSpan.style.display = "none";
+          selectBtn.style.display = "none";
+          editBtn.style.display = "none";
+
+          inputDate.style.display = "inline-block";
+          saveBtn.style.display = "inline-block";
+        });
+
+        // Événement sauvegarder : update Firestore et revenir à affichage normal
+        saveBtn.addEventListener("click", async () => {
+          const newDateStr = inputDate.value;
+          if (!newDateStr) {
+            alert("Date invalide");
+            return;
+          }
+          try {
+            const newDate = new Date(newDateStr);
+            await db.collection("semaines").doc(doc.id).update({
+              createdAt: newDate
+            });
+            // Mise à jour de l'affichage
+            dateSpan.textContent = `Semaine du ${newDate.toLocaleDateString()}`;
+
+            dateSpan.style.display = "inline";
+            selectBtn.style.display = "inline-block";
+            editBtn.style.display = "inline-block";
+
+            inputDate.style.display = "none";
+            saveBtn.style.display = "none";
+
+            alert("Date de la semaine mise à jour !");
+          } catch (err) {
+            console.error("Erreur mise à jour date semaine :", err);
+            alert("Erreur lors de la mise à jour.");
+          }
+        });
+
+        div.appendChild(dateSpan);
+        div.appendChild(selectBtn);
+        div.appendChild(editBtn);
+        div.appendChild(inputDate);
+        div.appendChild(saveBtn);
+
+        weeksList.appendChild(div);
+      });
+    })
+    .catch(err => {
+      console.error("Erreur récupération semaines :", err);
+    });
+}
 
   </script>
 </body>
