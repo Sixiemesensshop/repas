@@ -8,6 +8,17 @@
     .daySquare input[type="text"] {
   margin-top: 10px;
   font-size: 0.9em;
+   margin-top: 10px;
+  font-size: 1em; /* ou plus, par ex. 1.2em */
+  height: 60px; /* augmente la hauteur */
+  padding: 8px; /* espace intérieur */
+  width: 100%; /* ou une largeur fixe comme 150px si tu préfères */
+  box-sizing: border-box; /* pour que padding n'augmente pas la largeur totale */
+}
+.daySquare textarea {
+  font-size: 0.9em;
+  margin-top: 10px;
+  resize: none;
 }
     body {
       font-family: Arial, sans-serif;
@@ -316,15 +327,17 @@ title.style.fontWeight = "bold";
 title.style.marginBottom = "10px";
 
 // Champ de note
-const noteInput = document.createElement("input");
-noteInput.type = "text";
+const noteInput = document.createElement("textarea");
 noteInput.placeholder = "Ajouter une note...";
 noteInput.value = day.note || "";
+noteInput.rows = 2; // Nombre de lignes visibles
 noteInput.style.width = "100%";
 noteInput.style.padding = "4px";
 noteInput.style.borderRadius = "5px";
 noteInput.style.border = "1px solid #ccc";
 noteInput.style.background = "#fff6ea";
+noteInput.style.resize = "none"; // Pour éviter l'agrandissement manuel
+noteInput.style.fontSize = "0.9em";
 noteInput.addEventListener("click", (e) => {
   e.stopPropagation(); // Empêche l’ouverture du jour
 });
@@ -423,9 +436,21 @@ div.appendChild(noteInput);
             return;
           }
           const dayData = doc.data();
-          ["dejeuner", "midi", "soir"].forEach(meal => {
+          ["dejeuner", "midi", "soir", "snack"].forEach(meal => {
             const photo = dayData.repas?.[meal]?.photoUrl || "";
             const ingredients = dayData.repas?.[meal]?.ingredients || "";
+const repasData = {};
+["dejeuner", "midi", "soir", "snack"].forEach(meal => {
+  const img = document.getElementById("img-" + meal);
+  const textarea = document.getElementById("textarea-" + meal);
+const snackTextarea = document.getElementById("textarea-snack");
+snackTextarea.value = dayData.repas?.snack?.ingredients || "";
+  repasData[meal] = {
+    photoUrl: img?.src || "",
+    ingredients: textarea?.value || ""
+    
+  };
+});
 
             const img = document.getElementById("img-" + meal);
             const inputFile = document.getElementById("file-" + meal);
@@ -461,7 +486,10 @@ div.appendChild(noteInput);
           ingredients: textarea.value || ""
         };
       });
-
+const snackTextarea = document.getElementById("textarea-snack");
+repasData.snack = {
+  ingredients: snackTextarea.value || ""
+};
       try {
         await db.collection("semaines").doc(currentWeekId).collection("jours").doc(currentDayDoc).update({
           repas: repasData
