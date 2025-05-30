@@ -262,12 +262,12 @@ function setupUpload(meal) {
 
   input.addEventListener("change", async function () {
     const file = input.files[0];
-    if (!file) return;
+    if (!file) return; // <-- Empêche de supprimer l'image s'il n'y a pas de nouveau fichier
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "suivis repas"); // Remplacez
-    formData.append("folder", "repas"); // optionnel
+    formData.append("upload_preset", "suivis repas");
+    formData.append("folder", "repas");
 
     try {
       const res = await fetch("https://api.cloudinary.com/v1_1/dejvzsdej/image/upload", {
@@ -281,7 +281,6 @@ function setupUpload(meal) {
         img.style.display = "block";
         input.previousElementSibling.style.display = "none";
 
-        // Mettez à jour Firestore avec l'URL de la photo
         const repasField = `repas.${meal}.photoUrl`;
         await db.collection("semaines").doc(currentWeekId).collection("jours").doc(currentDayDoc).update({
           [repasField]: data.secure_url
@@ -291,6 +290,11 @@ function setupUpload(meal) {
       console.error("Erreur d’upload :", err);
     }
   });
+      // Permet de recharger une image en cliquant sur l'image existante
+    img.addEventListener("click", () => {
+      input.click();
+    });
+
 }
 
 // Appelle cette fonction pour chaque repas :
