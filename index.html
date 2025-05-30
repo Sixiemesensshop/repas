@@ -440,18 +440,28 @@ div.appendChild(noteInput);
             const photo = dayData.repas?.[meal]?.photoUrl || "";
             const ingredients = dayData.repas?.[meal]?.ingredients || "";
 const repasData = {};
-["dejeuner", "midi", "soir", "snack"].forEach(meal => {
+["dejeuner", "midi", "soir"].forEach(meal => {
+  const photo = dayData.repas?.[meal]?.photoUrl || "";
+  const ingredients = dayData.repas?.[meal]?.ingredients || "";
   const img = document.getElementById("img-" + meal);
+  const inputFile = document.getElementById("file-" + meal);
   const textarea = document.getElementById("textarea-" + meal);
-  console.log("Chargement de:", document.getElementById("repasDuJour"));
+
+  if (photo) {
+    img.src = photo;
+    img.style.display = "block";
+    inputFile.previousElementSibling.style.display = "none";
+  } else {
+    img.style.display = "none";
+    inputFile.previousElementSibling.style.display = "flex";
+  }
+  textarea.value = ingredients;
+});
+
+// Chargement du snack (pas de photo)
 const snackTextarea = document.getElementById("textarea-snack");
 snackTextarea.value = dayData.repas?.snack?.ingredients || "";
-  repasData[meal] = {
-    photoUrl: img?.src || "",
-    ingredients: textarea?.value || ""
 
-  };
-});
 
             const img = document.getElementById("img-" + meal);
             const inputFile = document.getElementById("file-" + meal);
@@ -468,6 +478,7 @@ snackTextarea.value = dayData.repas?.snack?.ingredients || "";
             textarea.value = ingredients;
           });
         })
+    
         };
 
     // Sauvegarde les données du jour actuel dans Firestore
@@ -484,6 +495,12 @@ snackTextarea.value = dayData.repas?.snack?.ingredients || "";
           ingredients: textarea.value || ""
         };
       });
+// Snack (texte uniquement)
+const snackTextarea = document.getElementById("textarea-snack");
+repasData["snack"] = {
+  photoUrl: "", // pas de photo pour le snack
+  ingredients: snackTextarea.value || ""
+};
 
       try {
         await db.collection("semaines").doc(currentWeekId).collection("jours").doc(currentDayDoc).update({
