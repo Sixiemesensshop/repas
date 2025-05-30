@@ -443,12 +443,13 @@ const repasData = {};
 ["dejeuner", "midi", "soir", "snack"].forEach(meal => {
   const img = document.getElementById("img-" + meal);
   const textarea = document.getElementById("textarea-" + meal);
+  console.log("Chargement de:", document.getElementById("repasDuJour"));
 const snackTextarea = document.getElementById("textarea-snack");
 snackTextarea.value = dayData.repas?.snack?.ingredients || "";
   repasData[meal] = {
     photoUrl: img?.src || "",
     ingredients: textarea?.value || ""
-    
+
   };
 });
 
@@ -467,10 +468,7 @@ snackTextarea.value = dayData.repas?.snack?.ingredients || "";
             textarea.value = ingredients;
           });
         })
-        .catch(err => {
-          alert("Erreur chargement jour : " + err.message);
-        });
-    }
+        };
 
     // Sauvegarde les données du jour actuel dans Firestore
     async function saveAllData() {
@@ -486,10 +484,7 @@ snackTextarea.value = dayData.repas?.snack?.ingredients || "";
           ingredients: textarea.value || ""
         };
       });
-const snackTextarea = document.getElementById("textarea-snack");
-repasData.snack = {
-  ingredients: snackTextarea.value || ""
-};
+
       try {
         await db.collection("semaines").doc(currentWeekId).collection("jours").doc(currentDayDoc).update({
           repas: repasData
