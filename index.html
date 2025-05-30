@@ -485,7 +485,7 @@ div.appendChild(noteInput);
           const dayData = doc.data();
           ["dejeuner", "midi", "soir", "snack"].forEach(meal => {
             const photo = dayData.repas?.[meal]?.photoUrl || "";
-            const ingredients = dayData.repas?.[meal]?.ingredients || "";
+            const ingredients = dayData.repas?.[meal]?.ingredients || "";    
 const repasData = {};
 ["dejeuner", "midi", "soir"].forEach(meal => {
   const photo = dayData.repas?.[meal]?.photoUrl || "";
@@ -564,26 +564,34 @@ repasData["snack"] = {
       const img = document.getElementById("img-" + meal);
       const label = inputFile.previousElementSibling;
 
-      inputFile.addEventListener("change", e => {
-        const file = e.target.files[0];
-        if (!file) return;
+      if (inputFile && img) {
+    inputFile.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        // Crée un URL temporaire local pour afficher la nouvelle image directement
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        img.style.display = "block";
 
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          img.src = ev.target.result;
-          img.style.display = "block";
-          label.style.display = "none";
-        };
-        reader.readAsDataURL(file);
-      });
+        // Cacher le label ou autre élément précédent (comme avant)
+        if (inputFile.previousElementSibling) {
+          inputFile.previousElementSibling.style.display = "none";
+        }
 
-      img.addEventListener("click", () => {
-        inputFile.value = "";
-        img.src = "";
+        // Ici tu peux aussi supprimer l’ancienne URL stockée (selon ta logique)
+        // Par exemple, reset une variable qui garde la photoUrl pour éviter confusion
+        // Ex : dayData.repas[meal].photoUrl = ""; (si c’est local)
+      } else {
+        // Si plus de fichier sélectionné, remettre l'affichage par défaut
         img.style.display = "none";
-        label.style.display = "flex";
-      });
+        if (inputFile.previousElementSibling) {
+          inputFile.previousElementSibling.style.display = "flex";
+        }
+        img.src = "";
+      }
     });
+  }
+});
 
     // Au lancement, affiche la liste des semaines
     showWeeks();
