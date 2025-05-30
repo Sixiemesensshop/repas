@@ -568,10 +568,7 @@ repasData["snack"] = {
     inputFile.addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (file) {
-        // Crée un URL temporaire local pour afficher la nouvelle image directement
-        const url = URL.createObjectURL(file);
-        img.src = url;
-        img.style.display = "block";
+
 
         // Cacher le label ou autre élément précédent (comme avant)
         if (inputFile.previousElementSibling) {
