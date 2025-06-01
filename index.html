@@ -60,7 +60,7 @@
             margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
-            gap: 20px; /* Espace entre les cartes de semaine */
+            gap: 20px;
         }
         .weekCard {
             background: #ffd4a6;
@@ -71,13 +71,13 @@
             font-weight: bold;
             font-size: 1.2em;
             text-align: center;
-            flex: 1 0 250px; /* Ajuste la taille des cartes */
-            max-width: 300px; /* Limite la largeur max */
+            flex: 1 0 250px;
+            max-width: 300px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            cursor: pointer; /* Indique que la carte est cliquable */
+            cursor: pointer;
             transition: background-color 0.3s;
         }
         .weekCard:hover {
@@ -115,12 +115,12 @@
             background-color: #45a049;
         }
         .weekCard input[type="date"] {
-            width: calc(100% - 20px); /* Ajuste la largeur */
+            width: calc(100% - 20px);
             padding: 8px;
             border-radius: 5px;
             border: 1px solid #ccc;
             margin-bottom: 10px;
-            display: none; /* Caché par défaut */
+            display: none;
         }
 
 
@@ -233,7 +233,7 @@
                 flex-direction: column;
             }
             .weekCard {
-                flex: 1 0 100%; /* Les cartes prennent toute la largeur sur mobile */
+                flex: 1 0 100%;
                 max-width: 100%;
             }
         }
@@ -444,12 +444,14 @@
                 input.click();
             });
 
-            overlay.querySelector('.change-photo-btn').addEventListener('click', () => {
+            overlay.querySelector('.change-photo-btn').addEventListener('click', (e) => { // Ajout de (e)
+                e.stopPropagation(); // Stop propagation ici aussi
                 input.click();
                 photoContainer.classList.remove('active-overlay');
             });
 
-            overlay.querySelector('.remove-photo-btn').addEventListener('click', async () => {
+            overlay.querySelector('.remove-photo-btn').addEventListener('click', async (e) => { // Ajout de (e)
+                e.stopPropagation(); // Stop propagation ici aussi
                 if (confirm("Voulez-vous vraiment supprimer cette photo ?")) {
                     img.src = "";
                     img.style.display = "none";
@@ -473,7 +475,7 @@
             mealsView.style.display = "none";
             showHomeButton(false);
             createWeekButton.style.display = "inline-block";
-            weeksList.style.display = "flex"; // S'assurer que weeksList est visible
+            weeksList.style.display = "flex";
 
             db.collection("semaines").orderBy("createdAt", "desc").get()
                 .then(snapshot => {
@@ -486,7 +488,7 @@
                         const week = doc.data();
                         const weekCard = document.createElement("div");
                         weekCard.className = "weekCard";
-                        weekCard.setAttribute('data-week-id', doc.id); // Ajout de l'ID pour référence
+                        weekCard.setAttribute('data-week-id', doc.id);
 
                         const dateSpan = document.createElement("span");
                         dateSpan.className = "week-date";
@@ -500,6 +502,15 @@
                             const d = week.createdAt.toDate();
                             inputDate.value = d.toISOString().slice(0, 10);
                         }
+
+                        // Ajout de l'événement pour l'input date pour stopper la propagation
+                        inputDate.addEventListener("click", (e) => {
+                            e.stopPropagation(); // Empêche le clic sur l'input de déclencher la carte
+                        });
+                        inputDate.addEventListener("focus", (e) => {
+                            e.stopPropagation(); // Empêche le focus sur l'input de déclencher la carte
+                        });
+
 
                         const actionsDiv = document.createElement("div");
                         actionsDiv.className = "week-actions";
@@ -576,7 +587,6 @@
             daysList.innerHTML = "";
             showHomeButton(true);
 
-            // Mettre à jour le titre de la semaine sélectionnée
             db.collection("semaines").doc(weekId).get().then(doc => {
                 if (doc.exists) {
                     const weekData = doc.data();
@@ -648,7 +658,6 @@
             createWeekButton.style.display = "none";
             showHomeButton(true);
 
-            // Mettre à jour le titre du jour sélectionné
             weekTitle.textContent = `Semaine - Jour : ${dayName}`;
 
             loadDayData(weekId, dayDocId);
@@ -661,7 +670,7 @@
 
         homeButton.addEventListener("click", () => {
             saveAllData().then(() => {
-                location.reload(); // Recharger la page pour revenir à l'état initial des semaines
+                location.reload();
             });
         });
 
@@ -759,7 +768,7 @@
             });
             const snackTextarea = document.getElementById("textarea-snack");
             repasData["snack"] = {
-                photoUrl: "", // Snack n'a pas de photo
+                photoUrl: "",
                 ingredients: snackTextarea.value || ""
             };
 
