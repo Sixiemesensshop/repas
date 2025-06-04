@@ -402,7 +402,10 @@
             input.addEventListener("change", async function () {
                 const file = input.files[0];
                 if (!file) {
-                    if (!img.src) {
+                    // Si l'utilisateur annule la sélection de fichier
+                    // et qu'il n'y avait pas d'image avant, on réinitialise l'affichage.
+                    // Si une image existait, on ne la retire pas.
+                    if (!img.src) { // Vérifie si img.src est vide (pas d'image avant)
                         img.style.display = "none";
                         label.style.display = "flex";
                         overlay.style.opacity = '0';
@@ -413,11 +416,11 @@
 
                 const formData = new FormData();
                 formData.append("file", file);
-                formData.append("upload_preset", "suivis repas");
-                formData.append("folder", "repas");
+                formData.append("upload_preset", "suivis repas"); // Assurez-vous que c'est le bon preset
+                formData.append("folder", "repas"); // Assurez-vous que c'est le bon dossier
 
                 try {
-                    const res = await fetch("https://api.cloudinary.com/v1_1/dejvzsdej/image/upload", {
+                    const res = await fetch("https://api.cloudinary.com/v1_1/dejvzsdej/image/upload", { // Remplacez par votre Cloud Name
                         method: "POST",
                         body: formData,
                     });
@@ -432,26 +435,32 @@
 
                         const repasField = `repas.${meal}.photoUrl`;
                         await db.collection("semaines").doc(currentWeekId).collection("jours").doc(currentDayDoc).update({
-                            [repasField]: data.secure_url
+                            [repasField]: data.secure_url // C'est ici que l'URL Cloudinary est stockée !
                         });
+                        console.log(`Photo pour ${meal} sauvegardée :`, data.secure_url);
+                    } else {
+                        console.error("Erreur Cloudinary: Aucune secure_url dans la réponse", data);
+                        alert("Erreur lors de l'upload de l'image sur Cloudinary.");
                     }
                 } catch (err) {
                     console.error("Erreur d’upload :", err);
+                    alert("Erreur lors de l'upload de l'image. Vérifiez votre connexion.");
                 }
             });
 
             img.addEventListener("click", () => {
+                // Permet de cliquer sur l'image pour la changer
                 input.click();
             });
 
-            overlay.querySelector('.change-photo-btn').addEventListener('click', (e) => { // Ajout de (e)
-                e.stopPropagation(); // Stop propagation ici aussi
+            overlay.querySelector('.change-photo-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
                 input.click();
                 photoContainer.classList.remove('active-overlay');
             });
 
-            overlay.querySelector('.remove-photo-btn').addEventListener('click', async (e) => { // Ajout de (e)
-                e.stopPropagation(); // Stop propagation ici aussi
+            overlay.querySelector('.remove-photo-btn').addEventListener('click', async (e) => {
+                e.stopPropagation();
                 if (confirm("Voulez-vous vraiment supprimer cette photo ?")) {
                     img.src = "";
                     img.style.display = "none";
@@ -461,8 +470,9 @@
 
                     const repasField = `repas.${meal}.photoUrl`;
                     await db.collection("semaines").doc(currentWeekId).collection("jours").doc(currentDayDoc).update({
-                        [repasField]: ""
+                        [repasField]: "" // Vide l'URL dans Firestore
                     });
+                    console.log(`Photo pour ${meal} supprimée.`);
                 }
             });
         }
@@ -664,12 +674,12 @@
         }
 
         backButton.addEventListener("click", () => {
-            saveAllData();
+            saveAllData(); // Sauvegarde les modifications des ingrédients
             showDaysForWeek(currentWeekId);
         });
 
         homeButton.addEventListener("click", () => {
-            saveAllData().then(() => {
+            saveAllData().then(() => { // Sauvegarde avant de recharger la page
                 location.reload();
             });
         });
@@ -729,19 +739,21 @@
                         const photoContainer = img.closest('.photoContainer');
                         const overlay = photoContainer.querySelector('.photo-overlay');
 
-
+                        // Réinitialiser la visibilité de l'image et de l'étiquette pour chaque repas
                         if (photo) {
                             img.src = photo;
                             img.style.display = "block";
                             label.style.display = "none";
-                            overlay.style.opacity = '0';
-                            photoContainer.classList.remove('active-overlay');
                         } else {
+                            // Si aucune photo n'est présente, vider la source de l'image et masquer l'image
+                            img.src = ""; 
                             img.style.display = "none";
-                            label.style.display = "flex";
-                            overlay.style.opacity = '0';
-                            photoContainer.classList.remove('active-overlay');
+                            label.style.display = "flex"; // Afficher l'étiquette "Ajouter une photo"
                         }
+                        // Toujours réinitialiser l'état de l'overlay lors du chargement de nouvelles données
+                        overlay.style.opacity = '0';
+                        photoContainer.classList.remove('active-overlay');
+
                         textarea.value = ingredients;
                     });
 
@@ -756,28 +768,19 @@
         async function saveAllData() {
             if (!currentWeekId || !currentDayDoc) return;
 
-            const repasData = {};
-            ["dejeuner", "midi", "soir"].forEach(meal => {
-                const img = document.getElementById("img-" + meal);
+            const updates = {};
+            ["dejeuner", "midi", "soir", "snack"].forEach(meal => {
                 const textarea = document.getElementById("textarea-" + meal);
-
-                repasData[meal] = {
-                    photoUrl: img.src || "",
-                    ingredients: textarea.value || ""
-                };
+                // Nous mettons à jour spécifiquement le champ 'ingredients' pour chaque repas et le snack.
+                // Les 'photoUrl' sont gérées directement par la fonction 'setupUpload' lors de l'upload.
+                updates[`repas.${meal}.ingredients`] = textarea.value || "";
             });
-            const snackTextarea = document.getElementById("textarea-snack");
-            repasData["snack"] = {
-                photoUrl: "",
-                ingredients: snackTextarea.value || ""
-            };
 
             try {
-                await db.collection("semaines").doc(currentWeekId).collection("jours").doc(currentDayDoc).update({
-                    repas: repasData
-                });
+                await db.collection("semaines").doc(currentWeekId).collection("jours").doc(currentDayDoc).update(updates);
+                console.log("Données d'ingrédients sauvegardées avec succès.");
             } catch (err) {
-                console.error("Erreur sauvegarde :", err);
+                console.error("Erreur lors de la sauvegarde des données :", err);
             }
         }
 
